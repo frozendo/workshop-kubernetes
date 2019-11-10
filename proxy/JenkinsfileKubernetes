@@ -23,6 +23,7 @@ node {
         stage(name: "Version"){
             sh "${gradlew} -PtypeVersion=${typeVersion} patchVersion"
             version=getVersion()
+            sh "${gradlew} replaceVersion -PprojectVersion=${version}"
         }
         stage(name: "Compile"){
             sh "${gradlew} build "
@@ -36,6 +37,18 @@ node {
         stage(name: "Commit changes"){
             sh "git commit -am \"version ${version}\""
             sh "git push origin ${branch}"
+        }
+        try{
+            stage(name: "Approval", concurrency: 1)
+            timeout(time: 2, unit: "HOURS") {
+                input(message: "Approve Deployment Proxy branch  ${branch} ?")
+            }
+        }
+        catch (all){
+            throw all
+        }
+        stage(name: "Deploy"){
+            sh "kubectl apply -f k8s/proxy-jenkins.yaml"
         }
     }
 }

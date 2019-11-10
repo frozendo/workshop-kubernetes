@@ -20,6 +20,7 @@ A imagem é o conceito do que queremos executar e o container é aquela execuç�
 
 ```
 $ docker run -p 2012:2012 iundarigun/helloworld
+$ docker run -d -p 2012:2012 iundarigun/helloworld
 $ docker ps
 ```
 O que aparece no depois do docker ps é o container. A imagem é *iundarigun/helloworld*
@@ -85,4 +86,34 @@ $ ./gradlew build
 
 Agora podemos gerar a imagem. Ver as instruções no README de cada projeto.
 
+## Rodando as imagens
+
+Vamos rodar as duas imagens:
+
+```
+$ docker run -d iundarigun/proxy
+$ docker run -d iundarigun/preferences
+```
+O problema é que não está acessível ainda. Não especificamos a porta. Precisamos fazer isso:
+
+```
+$ docker run -d -p 9000:9000 --name workshop-proxy iundarigun/proxy
+$ docker run -d -p 9009:9009 --name workshop-preferences iundarigun/preferences
+```
+
+Ok, o `proxy` funcionou, mas o preferences não. Vamos tentar ver os logs:
+
+```
+$ docker logs -f workshop-preferences
+```
+
+Isso é porque tenta pegar a conexão do banco do localhost e ele não entende o que é o localhost.
+
+```
+$ docker run -d -p 9009:9009 -e SPRING_DATASOURCE_URL="jdbc:mysql://<YOUR_IP>:3306/preferences?useSSL=false&allowPublicKeyRetrieval=true" --name workshop-preferences iundarigun/preferences
+```
+Faltou especificar a url do proxy.
+```
+$ docker run -d -p 9009:9009 -e SPRING_DATASOURCE_URL="jdbc:mysql://<YOUR_IP>:3306/preferences?useSSL=false&allowPublicKeyRetrieval=true" -e URL_PROXY="http://<YOUR_IP>:9000" --name workshop-preferences iundarigun/preferences
+```
 
