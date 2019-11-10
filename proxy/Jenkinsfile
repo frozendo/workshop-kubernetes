@@ -1,19 +1,19 @@
 node {
-    def registry = "local-registry:5000/proxy"
-    def registryCredential = "${env.DockerCredentials}"
+    def registry = "workshop-registry:5000/proxy"
+    def registryCredential = "${env.LocalRegistryCredentials}"
     def gitCredential = "${env.GitCredentials}"
     def gradlew = "./gradlew"
     def typeVersion = "${env.Version}"
-    def version= ''
     def branch = "${env.Branch}"
-
-    sh "git config user.email \"jenkins@devcave.com.br\""
-    sh "git config user.name \"Jenkins\""
-
+    def version = "";
+    
+    sh "git config --global user.email \"flavio.ap.rozendo@gmail.com\""
+    sh "git config --global user.name \"Flavio Rozendo\""
+    
     stage(name: "Clone"){
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: gitCredential,
                           usernameVariable: 'USERGIT', passwordVariable: 'PASSGIT']]) {
-            git url: "https://${env.USERGIT}:${env.PASSGIT}@github.com/iundarigun/workshop-kubernetes", credentialsId: gitCredential, branch: branch
+            git url: "https://${env.USERGIT}:${env.PASSGIT}@github.com/frozendo/workshop-kubernetes", credentialsId: gitCredential, branch: branch
         }
     }
     dir("proxy"){
@@ -28,11 +28,11 @@ node {
             sh "${gradlew} build "
         }
         stage(name: "docker"){
-            docker.withRegistry( 'http://local-registry:5000', registryCredential ) {
+            docker.withRegistry( 'http://workshop-registry:5000', registryCredential ) {
                 dockername = docker.build(registry + ":${version}", ".")
                 dockername.push()
             }
-        }
+        } 
         stage(name: "Commit changes"){
             sh "git commit -am \"version ${version}\""
             sh "git push origin ${branch}"
